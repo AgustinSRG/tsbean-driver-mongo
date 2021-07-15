@@ -2,7 +2,7 @@
 
 "use strict";
 
-import { Cursor, DeleteWriteOpResultObject, FilterQuery, MongoClient, UpdateWriteOpResult } from "mongodb";
+import { Filter, FindCursor, MongoClient } from "mongodb";
 import { Readable } from "stream";
 import { DataSourceDriver, DataSource, GenericKeyValue, GenericRow, SortDirection, GenericFilter } from "tsbean-orm";
 import { filterToMongo } from "./filtering";
@@ -29,18 +29,12 @@ export class MongoDriver implements DataSourceDriver {
     constructor(url: string) {
         this.url = url;
         this.mongoClient = new MongoClient(this.url, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             forceServerObjectId: true,
         });
     }
 
     async connect(): Promise<MongoClient> {
-        if (this.mongoClient.isConnected()) {
-            return this.mongoClient;
-        } else {
-            return this.mongoClient.connect();
-        }
+        return this.mongoClient.connect();
     }
 
     /**
@@ -52,16 +46,14 @@ export class MongoDriver implements DataSourceDriver {
     async findByKey(table: string, keyName: string, keyValue: any): Promise<GenericRow> {
         const client = await this.connect()
         const db = client.db().collection(table);
-        const filter: FilterQuery<any> = Object.create(null);
+        const filter: Filter<any> = Object.create(null);
         filter[keyName] = keyValue;
         const doc = await db.findOne(filter);
-
-
 
         return doc;
     }
 
-    private generateFindSentence(table: string, filter: GenericFilter, sortBy: string, sortDir: SortDirection, projection: Set<string>): { filter: FilterQuery<any>, projection: any, sort: any } {
+    private generateFindSentence(table: string, filter: GenericFilter, sortBy: string, sortDir: SortDirection, projection: Set<string>): { filter: Filter<any>, projection: any, sort: any } {
         let mongoProjection = null;
         let mongoSort = null;
 
@@ -100,7 +92,7 @@ export class MongoDriver implements DataSourceDriver {
         const client = await this.connect()
 
         const db = client.db().collection(table);
-        let cursor: Cursor<any> = db.find(mongoFilter);
+        let cursor: FindCursor<any> = db.find(mongoFilter);
 
         if (mongoSort) {
             cursor = cursor.sort(mongoSort);
@@ -139,7 +131,7 @@ export class MongoDriver implements DataSourceDriver {
         const client = await this.connect()
         const db = client.db().collection(table);
 
-        const cursor: Cursor<any> = db.find(cond1);
+        const cursor: FindCursor<any> = db.find(cond1);
 
         const count = await cursor.count();
 
@@ -168,7 +160,7 @@ export class MongoDriver implements DataSourceDriver {
         const client = await this.connect()
         const db = client.db().collection(table);
 
-        let cursor: Cursor<any> = db.find(mongoFilter);
+        let cursor: FindCursor<any> = db.find(mongoFilter);
 
         if (mongoSort) {
             cursor = cursor.sort(mongoSort);
@@ -244,7 +236,7 @@ export class MongoDriver implements DataSourceDriver {
         const client = await this.connect()
         const db = client.db().collection(table);
 
-        let cursor: Cursor<any> = db.find(mongoFilter);
+        let cursor: FindCursor<any> = db.find(mongoFilter);
 
         if (mongoSort) {
             cursor = cursor.sort(mongoSort);
@@ -322,7 +314,7 @@ export class MongoDriver implements DataSourceDriver {
             return; // Nothing to update
         }
 
-        const filter: FilterQuery<any> = Object.create(null);
+        const filter: Filter<any> = Object.create(null);
         filter[keyName] = keyValue;
 
         const client = await this.connect()
@@ -345,13 +337,12 @@ export class MongoDriver implements DataSourceDriver {
             return; // Nothing to update
         }
 
-        const mongoFilter: FilterQuery<any> = filterToMongo(filter);
+        const mongoFilter: Filter<any> = filterToMongo(filter);
         const client = await this.connect()
         const db = client.db().collection(table);
-        const res: UpdateWriteOpResult = await db.updateMany(mongoFilter, { $set: updated });
+        const res = await db.updateMany(mongoFilter, { $set: updated });
 
-
-        return res.result.nModified;
+        return res.modifiedCount;
     }
 
     /**
@@ -362,15 +353,15 @@ export class MongoDriver implements DataSourceDriver {
      * @returns true if the row was deleted, false if the row didn't exists
      */
     async delete(table: string, keyName: string, keyValue: GenericKeyValue): Promise<boolean> {
-        const filter: FilterQuery<any> = Object.create(null);
+        const filter: Filter<any> = Object.create(null);
         filter[keyName] = keyValue;
 
         const client = await this.connect()
         const db = client.db().collection(table);
-        const res: DeleteWriteOpResultObject = await db.deleteOne(filter);
+        const res = await db.deleteOne(filter);
 
 
-        return res.result.n > 0;
+        return res.deletedCount > 0;
     }
 
     /**
@@ -382,10 +373,10 @@ export class MongoDriver implements DataSourceDriver {
     async deleteMany(table: string, filter: GenericFilter): Promise<number> {
         const client = await this.connect()
         const db = client.db().collection(table);
-        const res: DeleteWriteOpResultObject = await db.deleteMany(filterToMongo(filter));
+        const res = await db.deleteMany(filterToMongo(filter));
 
 
-        return res.result.n;
+        return res.deletedCount;
     }
 
     /**
@@ -428,7 +419,7 @@ export class MongoDriver implements DataSourceDriver {
         const client = await this.connect()
         const db = client.db().collection(table);
 
-        const filter: FilterQuery<any> = Object.create(null);
+        const filter: Filter<any> = Object.create(null);
         filter[keyName] = keyValue;
 
         const incData: any = Object.create(null);

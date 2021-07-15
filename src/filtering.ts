@@ -2,10 +2,10 @@
 
 "use strict";
 
-import { FilterQuery } from "mongodb";
+import { Filter } from "mongodb";
 import { GenericFilter } from "tsbean-orm";
 
-function negateMongoQuery(query: FilterQuery<any>): FilterQuery<any> {
+function negateMongoQuery(query: Filter<any>): Filter<any> {
     const keys = Object.keys(query);
 
     for (const key of keys) {
@@ -30,7 +30,7 @@ function negateMongoQuery(query: FilterQuery<any>): FilterQuery<any> {
  * @param filter Generic filter
  * @returns MongoDB filter
  */
-export function filterToMongo(filter: GenericFilter): FilterQuery<any> {
+export function filterToMongo(filter: GenericFilter): Filter<any> {
     let query = Object.create(null);
 
     if (!filter) {
