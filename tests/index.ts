@@ -186,6 +186,26 @@ describe("MongoDB tsbean-orm driver testing", () => {
         expect(dummyFound.toObject()).to.be.eql(dummy.toObject());
     });
 
+    it("Update primary key (Dummy)", async () => {
+        const dummy = await Dummy.finder.findByKey("dummy-0001");
+
+        dummy.id = "dummy-other";
+
+        await dummy.save();
+
+        // Find the dummy
+        const dummyFound = await Dummy.finder.findByKey(dummy.id);
+
+        expect(dummyFound).not.to.be.null;
+
+        expect(dummyFound.toObject()).to.be.eql(dummy.toObject());
+
+        // The old ID must not exists
+        const oldDummy = await Dummy.finder.findByKey("dummy-0001");
+
+        expect(oldDummy).to.be.null;
+    });
+
     it("Delete all dummys", async () => {
         await Dummy.finder.delete(DataFilter.any());
         expect(await Dummy.finder.count(DataFilter.any())).to.be.equal(0);
