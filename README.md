@@ -1,9 +1,6 @@
 # TSBean-ORM MongoDB Driver
 
 [![npm version](https://badge.fury.io/js/tsbean-driver-mongo.svg)](https://badge.fury.io/js/tsbean-driver-mongo)
-[![Dependency Status](https://david-dm.org/AgustinSRG/tsbean-driver-mongo.svg)](https://david-dm.org/AgustinSRG/tsbean-driver-mongo)
-[![devDependency Status](https://david-dm.org/AgustinSRG/tsbean-driver-mongo/dev-status.svg)](https://david-dm.org/AgustinSRG/tsbean-driver-mongo?type=dev)
-[![peerDependency Status](https://david-dm.org/AgustinSRG/tsbean-driver-mongo/peer-status.svg)](https://david-dm.org/AgustinSRG/tsbean-driver-mongo?type=peer)
 
 This a MongoDB driver for [tsbean-orm](https://github.com/AgustinSRG/tsbean-orm).
 
