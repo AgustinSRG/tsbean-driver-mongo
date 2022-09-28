@@ -1,6 +1,6 @@
 {
   "name": "tsbean-driver-mongo",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "Mongo DB driver for TSBean-ORM.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -50,6 +50,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@asanrom/async-tools": "1.0.0",
     "mongodb": "4.10.0",
     "tsbean-orm": "1.1.1"
   }

@@ -2,6 +2,7 @@
 
 "use strict";
 
+import { AsyncSemaphore } from "@asanrom/async-tools";
 import { Filter, FindCursor, MongoClient } from "mongodb";
 import { Readable } from "stream";
 import { DataSourceDriver, DataSource, GenericKeyValue, GenericRow, SortDirection, GenericFilter } from "tsbean-orm";
@@ -26,15 +27,30 @@ export class MongoDriver implements DataSourceDriver {
     public url: string;
     public mongoClient: MongoClient;
 
+    private mutex: AsyncSemaphore;
+
+    private connection: MongoClient;
+
     constructor(url: string) {
         this.url = url;
+        this.mutex = new AsyncSemaphore(1);
         this.mongoClient = new MongoClient(this.url, {
             forceServerObjectId: true,
         });
     }
 
     async connect(): Promise<MongoClient> {
-        return this.mongoClient.connect();
+        await this.mutex.acquire();
+        try {
+            if (!this.connection) {
+                this.connection = await this.mongoClient.connect();
+            }
+            this.mutex.release();
+            return this.connection;
+        } catch (ex) {
+            this.mutex.release();
+            throw ex;
+        }
     }
 
     /**
@@ -131,11 +147,7 @@ export class MongoDriver implements DataSourceDriver {
         const client = await this.connect()
         const db = client.db().collection(table);
 
-        const cursor: FindCursor<any> = db.find(cond1);
-
-        const count = await cursor.count();
-
-
+        const count = await db.countDocuments(cond1)
 
         return count;
     }
