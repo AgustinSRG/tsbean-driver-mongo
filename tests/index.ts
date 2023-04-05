@@ -3,12 +3,12 @@
 "use strict";
 
 import { expect } from 'chai';
-import { DataFilter, DataSource, OrderBy, SelectOptions } from 'tsbean-orm';
+import { DataFilter, DataSource, DataUpdate, OrderBy, SelectOptions } from 'tsbean-orm';
 import { MongoDriver } from "../src/index";
 import { Person } from './models/person';
 import { Dummy } from './models/dummy';
 
-const dataSource: DataSource = MongoDriver.createDataSource("mongodb://localhost/tsbean_test");
+const dataSource: DataSource = MongoDriver.createDataSource("mongodb://127.0.0.1/tsbean_test");
 const driver: MongoDriver = <MongoDriver>dataSource.driver;
 
 DataSource.set(DataSource.DEFAULT, dataSource);
@@ -19,7 +19,7 @@ interface PersonData {
     surname: string;
     age: number;
     hasDriverLicense: boolean;
-    preferences: string[];
+    preferences: string[] | null;
     birthDate: Date;
 }
 
@@ -241,7 +241,7 @@ describe("MongoDB tsbean-orm driver testing", () => {
     });
 
     it("Find (Stream)", async () => {
-        const results = [];
+        const results: Person[] = [];
         await Person.finder.findStream(DataFilter.any(), OrderBy.asc("id"), SelectOptions.default(), async (person: Person) => {
             results.push(person);
         });
@@ -250,7 +250,7 @@ describe("MongoDB tsbean-orm driver testing", () => {
     });
 
     it("Find (Stream Sync)", async () => {
-        const results = [];
+        const results: Person[] = [];
         await Person.finder.findStreamSync(DataFilter.any(), OrderBy.asc("id"), SelectOptions.default(), async (person: Person) => {
             results.push(person);
         });
@@ -393,11 +393,12 @@ describe("MongoDB tsbean-orm driver testing", () => {
         rows = rows.map(row => {
             if (row.age > 50) {
                 row.hasDriverLicense = false;
+                row.age++;
             }
             return row;
         });
 
-        await Person.finder.update({hasDriverLicense: false}, DataFilter.greaterThan("age", 50));
+        await Person.finder.update({ hasDriverLicense: DataUpdate.set(false), age: DataUpdate.increment(1) }, DataFilter.greaterThan("age", 50));
 
         const results = await Person.finder.find(DataFilter.any(), OrderBy.asc("id"));
 

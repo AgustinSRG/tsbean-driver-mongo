@@ -3,9 +3,9 @@
 "use strict";
 
 import { AsyncSemaphore } from "@asanrom/async-tools";
-import { Filter, FindCursor, MongoClient } from "mongodb";
+import { Filter, FindCursor, MongoClient, UpdateResult } from "mongodb";
 import { Readable } from "stream";
-import { DataSourceDriver, DataSource, GenericKeyValue, GenericRow, SortDirection, GenericFilter } from "tsbean-orm";
+import { DataSourceDriver, DataSource, GenericKeyValue, GenericRow, SortDirection, GenericFilter, GenericRowUpdate } from "tsbean-orm";
 import { filterToMongo } from "./filtering";
 
 
@@ -342,7 +342,7 @@ export class MongoDriver implements DataSourceDriver {
      * @param updated Updated row
      * @returns The number of affected rows
      */
-    async updateMany(table: string, filter: GenericFilter, updated: GenericRow): Promise<number> {
+    async updateMany(table: string, filter: GenericFilter, updated: GenericRowUpdate): Promise<number> {
         const keys = Object.keys(updated);
 
         if (keys.length === 0) {
@@ -352,7 +352,41 @@ export class MongoDriver implements DataSourceDriver {
         const mongoFilter: Filter<any> = filterToMongo(filter);
         const client = await this.connect()
         const db = client.db().collection(table);
-        const res = await db.updateMany(mongoFilter, { $set: updated });
+
+        const updateSet = Object.create(null);
+        let hasSet = false;
+        const updateInc = Object.create(null);
+        let hasInc = false;
+
+        for (const key of Object.keys(updated)) {
+            if (typeof updated[key] === "object" && updated[key] !== null) {
+                if (updated[key].update === "set") {
+                    updateSet[key] = updated[key].value;
+                    hasSet = true;
+                } else if (updated[key].update === "inc") {
+                    updateInc[key] = updated[key].value;
+                    hasInc = true;
+                } else {
+                    updateSet[key] = updated[key];
+                    hasSet = true;
+                }
+            } else {
+                updateSet[key] = updated[key];
+                hasSet = true;
+            }
+        }
+
+        let res: UpdateResult;
+
+        if (hasSet && hasInc) {
+            res = await db.updateMany(mongoFilter, { $set: updateSet, $inc: updateInc });
+        } else if (hasSet) {
+            res = await db.updateMany(mongoFilter, { $set: updateSet });
+        } else if (hasInc) {
+            res = await db.updateMany(mongoFilter, { $inc: updateInc });
+        } else {
+            return 0;
+        }
 
         return res.modifiedCount;
     }
