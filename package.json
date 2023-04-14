@@ -1,6 +1,6 @@
 {
   "name": "tsbean-driver-mongo",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Mongo DB driver for TSBean-ORM.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -32,7 +32,7 @@
     "lint"
   ],
   "peerDependencies": {
-    "tsbean-orm": "2.0.1"
+    "tsbean-orm": "2.0.2"
   },
   "devDependencies": {
     "@types/chai": "4.3.4",
@@ -52,6 +52,6 @@
   "dependencies": {
     "@asanrom/async-tools": "1.0.0",
     "mongodb": "5.2.0",
-    "tsbean-orm": "2.0.1"
+    "tsbean-orm": "2.0.2"
   }
 }
