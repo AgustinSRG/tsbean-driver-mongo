@@ -5,7 +5,7 @@
 import { AsyncSemaphore } from "@asanrom/async-tools";
 import { Filter, FindCursor, MongoClient, UpdateResult } from "mongodb";
 import { Readable } from "stream";
-import { DataSourceDriver, DataSource, GenericKeyValue, GenericRow, SortDirection, GenericFilter, GenericRowUpdate } from "tsbean-orm";
+import { DataSourceDriver, DataSource, GenericKeyValue, GenericRow, SortDirection, GenericFilter, GenericRowUpdate, QueryExtraOptions } from "tsbean-orm";
 import { filterToMongo } from "./filtering";
 
 
@@ -97,9 +97,10 @@ export class MongoDriver implements DataSourceDriver {
      * @param sortDir "asc" or "desc". Leave as null for default sorting
      * @param skip Number of rows to skip. Leave as -1 for no skip
      * @param limit Limit of results. Leave as -1 for no limit
-     * @param projection List of fields to featch from the table. Leave as null to fetch them all.
+     * @param projection List of fields to fetch from the table. Leave as null to fetch them all.
+     * @param queryExtraOptions Additional query options
      */
-    async find(table: string, filter: GenericFilter, sortBy: string, sortDir: SortDirection, skip: number, limit: number, projection: Set<string>): Promise<GenericRow[]> {
+    async find(table: string, filter: GenericFilter, sortBy: string, sortDir: SortDirection, skip: number, limit: number, projection: Set<string>, queryExtraOptions: QueryExtraOptions): Promise<GenericRow[]> {
         const sentenceAndValues = this.generateFindSentence(table, filter, sortBy, sortDir, projection);
         const mongoFilter = sentenceAndValues.filter;
         const mongoSort = sentenceAndValues.sort;
@@ -140,8 +141,9 @@ export class MongoDriver implements DataSourceDriver {
      * Counts the number of rows matching a condition
      * @param table Table or collection name
      * @param filter Filter to apply
+     * @param queryExtraOptions Additional query options
      */
-    async count(table: string, filter: GenericFilter): Promise<number> {
+    async count(table: string, filter: GenericFilter, queryExtraOptions: QueryExtraOptions): Promise<number> {
         const cond1 = filterToMongo(filter);
 
         const client = await this.connect()
@@ -160,10 +162,11 @@ export class MongoDriver implements DataSourceDriver {
      * @param sortDir "asc" or "desc". Leave as null for default sorting
      * @param skip Number of rows to skip. Leave as -1 for no skip
      * @param limit Limit of results. Leave as -1 for no limit
-     * @param projection List of fields to featch from the table. Leave as null to fetch them all.
+     * @param projection List of fields to fetch from the table. Leave as null to fetch them all.
+     * @param queryExtraOptions Additional query options
      * @param each Function to parse each row
      */
-    async findStream(table: string, filter: GenericFilter, sortBy: string, sortDir: SortDirection, skip: number, limit: number, projection: Set<string>, each: (row: GenericRow) => Promise<void>): Promise<void> {
+    async findStream(table: string, filter: GenericFilter, sortBy: string, sortDir: SortDirection, skip: number, limit: number, projection: Set<string>, queryExtraOptions: QueryExtraOptions, each: (row: GenericRow) => Promise<void>): Promise<void> {
         const sentenceAndValues = this.generateFindSentence(table, filter, sortBy, sortDir, projection);
         const mongoFilter = sentenceAndValues.filter;
         const mongoSort = sentenceAndValues.sort;
@@ -236,10 +239,11 @@ export class MongoDriver implements DataSourceDriver {
      * @param sortDir "asc" or "desc". Leave as null for default sorting
      * @param skip Number of rows to skip. Leave as -1 for no skip
      * @param limit Limit of results. Leave as -1 for no limit
-     * @param projection List of fields to featch from the table. Leave as null to fetch them all.
+     * @param projection List of fields to fetch from the table. Leave as null to fetch them all.
+     * @param queryExtraOptions Additional query options
      * @param each Function to parse each row
      */
-    async findStreamSync(table: string, filter: GenericFilter, sortBy: string, sortDir: SortDirection, skip: number, limit: number, projection: Set<string>, each: (row: any) => void): Promise<void> {
+    async findStreamSync(table: string, filter: GenericFilter, sortBy: string, sortDir: SortDirection, skip: number, limit: number, projection: Set<string>, queryExtraOptions: QueryExtraOptions, each: (row: any) => void): Promise<void> {
         const sentenceAndValues = this.generateFindSentence(table, filter, sortBy, sortDir, projection);
         const mongoFilter = sentenceAndValues.filter;
         const mongoSort = sentenceAndValues.sort;
@@ -309,7 +313,6 @@ export class MongoDriver implements DataSourceDriver {
         const client = await this.connect()
         const db = client.db().collection(table);
         await db.insertMany(rows);
-
     }
 
     /**
