@@ -1,6 +1,6 @@
 {
   "name": "tsbean-driver-mongo",
-  "version": "3.1.0",
+  "version": "4.0.0",
   "description": "Mongo DB driver for TSBean-ORM.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -42,7 +42,7 @@
     "@typescript-eslint/parser": "6.6.0",
     "chai": "4.3.8",
     "eslint": "8.48.0",
-    "mocha": "10.2.0",
+    "mocha": "11.0.1",
     "rimraf": "5.0.1",
     "ts-node": "10.9.1",
     "typedoc": "0.25.1",
@@ -50,7 +50,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@asanrom/async-tools": "1.1.1",
     "mongodb": "6.0.0",
     "tsbean-orm": "3.0.0"
   }

@@ -2,7 +2,6 @@
 
 "use strict";
 
-import { AsyncSemaphore } from "@asanrom/async-tools";
 import { Filter, FindCursor, MongoClient, UpdateResult } from "mongodb";
 import { Readable } from "stream";
 import { DataSourceDriver, DataSource, GenericKeyValue, GenericRow, SortDirection, GenericFilter, GenericRowUpdate, QueryExtraOptions } from "tsbean-orm";
@@ -27,30 +26,11 @@ export class MongoDriver implements DataSourceDriver {
     public url: string;
     public mongoClient: MongoClient;
 
-    private mutex: AsyncSemaphore;
-
-    private connection: MongoClient;
-
     constructor(url: string) {
         this.url = url;
-        this.mutex = new AsyncSemaphore(1);
         this.mongoClient = new MongoClient(this.url, {
             forceServerObjectId: true,
         });
-    }
-
-    async connect(): Promise<MongoClient> {
-        await this.mutex.acquire();
-        try {
-            if (!this.connection) {
-                this.connection = await this.mongoClient.connect();
-            }
-            this.mutex.release();
-            return this.connection;
-        } catch (ex) {
-            this.mutex.release();
-            throw ex;
-        }
     }
 
     /**
@@ -60,7 +40,7 @@ export class MongoDriver implements DataSourceDriver {
      * @param keyValue Value of the key
      */
     async findByKey(table: string, keyName: string, keyValue: any): Promise<GenericRow> {
-        const client = await this.connect()
+        const client =  this.mongoClient;
         const db = client.db().collection(table);
         const filter: Filter<any> = Object.create(null);
         filter[keyName] = keyValue;
@@ -106,7 +86,7 @@ export class MongoDriver implements DataSourceDriver {
         const mongoSort = sentenceAndValues.sort;
         const mongoProjection = sentenceAndValues.projection;
 
-        const client = await this.connect()
+        const client =  this.mongoClient;
 
         const db = client.db().collection(table);
         let cursor: FindCursor<any> = db.find(mongoFilter);
@@ -146,7 +126,7 @@ export class MongoDriver implements DataSourceDriver {
     async count(table: string, filter: GenericFilter, queryExtraOptions: QueryExtraOptions): Promise<number> {
         const cond1 = filterToMongo(filter);
 
-        const client = await this.connect()
+        const client =  this.mongoClient;
         const db = client.db().collection(table);
 
         const count = await db.countDocuments(cond1)
@@ -172,7 +152,7 @@ export class MongoDriver implements DataSourceDriver {
         const mongoSort = sentenceAndValues.sort;
         const mongoProjection = sentenceAndValues.projection;
 
-        const client = await this.connect()
+        const client =  this.mongoClient;
         const db = client.db().collection(table);
 
         let cursor: FindCursor<any> = db.find(mongoFilter);
@@ -249,7 +229,7 @@ export class MongoDriver implements DataSourceDriver {
         const mongoSort = sentenceAndValues.sort;
         const mongoProjection = sentenceAndValues.projection;
 
-        const client = await this.connect()
+        const client =  this.mongoClient;
         const db = client.db().collection(table);
 
         let cursor: FindCursor<any> = db.find(mongoFilter);
@@ -298,7 +278,7 @@ export class MongoDriver implements DataSourceDriver {
      * @param callback Callback to set the value of the primary key after inserting (Optional, only if auto-generated key)
      */
     async insert(table: string, row: GenericRow, key: string, callback?: (value: GenericKeyValue) => void): Promise<void> {
-        const client = await this.connect()
+        const client =  this.mongoClient;
         const db = client.db().collection(table);
         await db.insertOne(row);
         client.close;
@@ -310,7 +290,7 @@ export class MongoDriver implements DataSourceDriver {
      * @param rows List of rows to insert
      */
     async batchInsert(table: string, rows: GenericRow[]): Promise<void> {
-        const client = await this.connect()
+        const client =  this.mongoClient;
         const db = client.db().collection(table);
         await db.insertMany(rows);
     }
@@ -332,7 +312,7 @@ export class MongoDriver implements DataSourceDriver {
         const filter: Filter<any> = Object.create(null);
         filter[keyName] = keyValue;
 
-        const client = await this.connect()
+        const client =  this.mongoClient;
         const db = client.db().collection(table);
         await db.updateOne(filter, { $set: updated });
 
@@ -353,7 +333,7 @@ export class MongoDriver implements DataSourceDriver {
         }
 
         const mongoFilter: Filter<any> = filterToMongo(filter);
-        const client = await this.connect()
+        const client =  this.mongoClient;
         const db = client.db().collection(table);
 
         const updateSet = Object.create(null);
@@ -405,7 +385,7 @@ export class MongoDriver implements DataSourceDriver {
         const filter: Filter<any> = Object.create(null);
         filter[keyName] = keyValue;
 
-        const client = await this.connect()
+        const client =  this.mongoClient;
         const db = client.db().collection(table);
         const res = await db.deleteOne(filter);
 
@@ -420,7 +400,7 @@ export class MongoDriver implements DataSourceDriver {
      * @returns The number of affected rows
      */
     async deleteMany(table: string, filter: GenericFilter): Promise<number> {
-        const client = await this.connect()
+        const client =  this.mongoClient;
         const db = client.db().collection(table);
         const res = await db.deleteMany(filterToMongo(filter));
 
@@ -436,7 +416,7 @@ export class MongoDriver implements DataSourceDriver {
      * @param field Name of the field to aggregate
      */
     async sum(table: string, filter: GenericFilter, id: string, field: string): Promise<number> {
-        const client = await this.connect()
+        const client =  this.mongoClient;
         const db = client.db().collection(table);
         const mongoFilter = filterToMongo(filter);
 
@@ -465,7 +445,7 @@ export class MongoDriver implements DataSourceDriver {
      * @param inc The amount to increment
      */
     async increment(table: string, keyName: string, keyValue: GenericKeyValue, prop: string, inc: number): Promise<void> {
-        const client = await this.connect()
+        const client =  this.mongoClient;
         const db = client.db().collection(table);
 
         const filter: Filter<any> = Object.create(null);
