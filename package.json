@@ -1,6 +1,6 @@
 {
   "name": "tsbean-driver-mongo",
-  "version": "4.0.0",
+  "version": "4.0.2",
   "description": "Mongo DB driver for TSBean-ORM.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",

@@ -129,9 +129,11 @@ export class MongoDriver implements DataSourceDriver {
         const client =  this.mongoClient;
         const db = client.db().collection(table);
 
-        const count = await db.countDocuments(cond1)
-
-        return count;
+        if (Object.keys(cond1).length === 0) {
+            return db.estimatedDocumentCount();
+        } else {
+            return db.countDocuments(cond1);
+        }
     }
 
     /**
